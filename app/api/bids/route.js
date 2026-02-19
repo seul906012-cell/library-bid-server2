@@ -44,14 +44,13 @@ export async function GET() {
         instLabel: 기관.label,
         title: get("bidNtceNm"),
         date: get("bidNtceDt"),
-        bidNo: get("bidNtceNo")
+        bidNo: get("bidNtceNo"),
+        bidOrd: get("bidNtceOrd")  // 🔥 이게 중요
       });
     }
   }
 
   return new Response(JSON.stringify(result), {
-    headers: {
-      "Content-Type": "application/json"
-    }
+    headers: { "Content-Type": "application/json" }
   });
 }
