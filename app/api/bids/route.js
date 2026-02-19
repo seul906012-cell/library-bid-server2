@@ -44,7 +44,7 @@ export async function GET() {
         instLabel: 기관.label,
         title: get("bidNtceNm"),
         date: get("bidNtceDt"),
-        detailUrl: get("bidNtceDtlUrl"), // 🔥 공식 상세 URL 사용
+        bidNo: get("bidNtceNo")
       });
     }
   }
