@@ -1,43 +1,56 @@
 export async function GET() {
   const SERVICE_KEY = process.env.SERVICE_KEY;
 
-  if (!SERVICE_KEY) {
-    return new Response("SERVICE_KEY not set", { status: 500 });
-  }
-
   const today = new Date();
   const start = new Date();
   start.setDate(today.getDate() - 30);
 
-  const fmt = (d, end = false) => {
+  const fmt = (d, end=false) => {
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}${m}${day}${end ? "2359" : "0000"}`;
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}${m}${day}${end?'2359':'0000'}`;
   };
 
-  const baseUrl =
+  const base =
     `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch` +
     `?ServiceKey=${SERVICE_KEY}` +
     `&numOfRows=100&pageNo=1` +
     `&inqryDiv=1` +
     `&inqryBgnDt=${fmt(start)}` +
-    `&inqryEndDt=${fmt(today, true)}`;
+    `&inqryEndDt=${fmt(today,true)}`;
 
-  const codes = ["1371029", "9720000"]; // 국립중앙 + 국회
+  const 기관목록 = [
+    { code: "1371029", label: "국립중앙도서관" },
+    { code: "9720000", label: "국회도서관" }
+  ];
 
-  let allXml = "";
+  let result = [];
 
-  for (const code of codes) {
-    const res = await fetch(`${baseUrl}&dminsttCd=${code}`);
-    const xml = await res.text();
-    allXml += xml + "\n\n";
+  for (const 기관 of 기관목록) {
+    const r = await fetch(`${base}&dminsttCd=${기관.code}`);
+    const xml = await r.text();
+
+    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
+
+    for (const item of items) {
+      const get = (tag) => {
+        const m = item[1].match(new RegExp(`<${tag}>(.*?)<\/${tag}>`));
+        return m ? m[1] : "";
+      };
+
+      result.push({
+        code: 기관.code,
+        instLabel: 기관.label,
+        title: get("bidNtceNm"),
+        date: get("bidNtceDt"),
+        bidNo: get("bidNtceNo"),
+        bidOrd: get("bidNtceOrd")
+      });
+    }
   }
 
-  return new Response(allXml, {
-    headers: {
-      "Content-Type": "application/xml; charset=utf-8",
-      "Access-Control-Allow-Origin": "*"
-    }
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json" }
   });
 }
