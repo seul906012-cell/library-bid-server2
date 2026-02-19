@@ -17,13 +17,13 @@ export async function GET() {
   };
 
   const url =
-    `https://apis.data.go.kr/1230000/BidPublicInfoService02/getBidPblancListInfoServcPPSSrch` +
-    `?ServiceKey=${SERVICE_KEY}` +
-    `&numOfRows=100&pageNo=1` +
-    `&inqryDiv=1` +
-    `&inqryBgnDt=${fmt(start)}` +
-    `&inqryEndDt=${fmt(today, true)}` +
-    `&dminsttCd=1371029`;
+  `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch` +
+  `?ServiceKey=${SERVICE_KEY}` +
+  `&numOfRows=100&pageNo=1` +
+  `&inqryDiv=1` +
+  `&inqryBgnDt=${fmt(start)}` +
+  `&inqryEndDt=${fmt(today, true)}` +
+  `&dminsttCd=1371029`;
 
   const res = await fetch(url);
   const xml = await res.text();
