@@ -1,1 +1,0 @@
-# library-bid-server2
