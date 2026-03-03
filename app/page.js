@@ -1,5 +1,7 @@
 "use client";
-
+<h1 style={{ color: "red" }}>
+  🔥 내가 수정한 코드 맞는지 테스트
+</h1>
 import { useState } from "react";
 
 export default function Home() {
