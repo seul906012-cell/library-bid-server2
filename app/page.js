@@ -27,6 +27,11 @@ export default function Home() {
 
   return (
     <div style={{ padding: 20 }}>
+
+      <h1 style={{ color: "red" }}>
+        🔥 재배포 테스트
+      </h1>
+
       <h1>나라장터 공고 검색</h1>
 
       <div style={{ marginBottom: 20 }}>
