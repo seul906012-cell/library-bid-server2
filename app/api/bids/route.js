@@ -16,8 +16,15 @@ export async function GET(request) {
 
     const SERVICE_KEY = process.env.SERVICE_KEY;
 
-    // 🔥 inqryDiv=2 로 변경
-    const url = `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc?serviceKey=${SERVICE_KEY}&inqryDiv=2&inqryBgnDt=${start}&inqryEndDt=${end}&pageNo=1&numOfRows=50&type=xml`;
+    const url =
+      `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc` +
+      `?serviceKey=${SERVICE_KEY}` +
+      `&inqryDiv=1` +                    // 🔥 공고일 기준
+      `&inqryBgnDt=${start}` +
+      `&inqryEndDt=${end}` +
+      `&pageNo=1` +
+      `&numOfRows=50` +
+      `&type=xml`;
 
     const response = await fetch(url);
     const xml = await response.text();
