@@ -8,7 +8,7 @@ export async function GET() {
     const SERVICE_KEY = process.env.SERVICE_KEY;
 
     const url =
-      `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc` +
+      `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfo` +
       `?serviceKey=${SERVICE_KEY}` +
       `&pageNo=1` +
       `&numOfRows=20` +
