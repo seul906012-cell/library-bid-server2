@@ -3,27 +3,15 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { parseStringPromise } from "xml2js";
 
-export async function GET(request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-
-    const start = searchParams.get("start");
-    const end = searchParams.get("end");
-
-    if (!start || !end) {
-      return NextResponse.json([]);
-    }
-
     const SERVICE_KEY = process.env.SERVICE_KEY;
 
     const url =
       `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc` +
       `?serviceKey=${SERVICE_KEY}` +
-      `&inqryDiv=1` +                    // 🔥 공고일 기준
-      `&inqryBgnDt=${start}` +
-      `&inqryEndDt=${end}` +
       `&pageNo=1` +
-      `&numOfRows=50` +
+      `&numOfRows=20` +
       `&type=xml`;
 
     const response = await fetch(url);
