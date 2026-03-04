@@ -1,47 +1,54 @@
 import { NextResponse } from "next/server";
-import { parseStringPromise } from "xml2js";
 
-export const dynamic = "force-dynamic";
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
 
-const SERVICE_KEY = process.env.NEXT_PUBLIC_SERVICE_KEY;
+  const SERVICE_KEY = process.env.SERVICE_KEY;
+  const start = searchParams.get("start");
+  const end = searchParams.get("end");
 
-function getToday() {
-  const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}${String(d.getDate()).padStart(2, "0")}`;
-}
+  const baseUrl =
+    "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch";
 
-export async function GET() {
-  try {
-    const today = getToday();
+  let pageNo = 1;
+  let allItems = [];
+  let hasMore = true;
 
-    const url = `https://apis.data.go.kr/1230000/BidPublicInfoService/getBidPblancListInfoServcPPSSrch?
-      serviceKey=${SERVICE_KEY}
-      &numOfRows=30
-      &pageNo=1
-      &inqryDiv=1
-      &inqryBgnDt=${today}
-      &inqryEndDt=${today}`;
+  while (hasMore) {
+    const url = `${baseUrl}?serviceKey=${SERVICE_KEY}&numOfRows=100&pageNo=${pageNo}&inqryDiv=1&inqryBgnDt=${start}&inqryEndDt=${end}&type=json`;
 
-    const response = await fetch(url.replace(/\s/g, ""));
-    const xml = await response.text();
+    const res = await fetch(url);
+    const data = await res.json();
 
-    const json = await parseStringPromise(xml, {
-      explicitArray: false,
-    });
+    const items = data?.response?.body?.items || [];
+    const totalCount = data?.response?.body?.totalCount || 0;
 
-    const items =
-      json?.response?.body?.items?.item || [];
+    if (items.length === 0) {
+      hasMore = false;
+    } else {
+      allItems = [...allItems, ...items];
 
-    // ✅ 용역만 필터
-    const serviceOnly = Array.isArray(items)
-      ? items.filter((i) => i.bidNtceNm?.includes("용역"))
-      : [];
-
-    return NextResponse.json(serviceOnly);
-  } catch (error) {
-    return NextResponse.json({ error: error.message });
+      if (allItems.length >= totalCount) {
+        hasMore = false;
+      } else {
+        pageNo++;
+      }
+    }
   }
+
+  const filtered = allItems
+    .filter(
+      (item) =>
+        item.dmndInsttCd === "1371029" ||
+        item.dmndInsttCd === "9720000"
+    )
+    .map((item) => ({
+      title: item.bidNtceNm,
+      instLabel: item.dmndInsttNm,
+      code: item.dmndInsttCd,
+      date: item.bidNtceDt?.replace(/[-: ]/g, "").slice(0, 8),
+      detailUrl: item.bidNtceUrl,
+    }));
+
+  return NextResponse.json(filtered);
 }
