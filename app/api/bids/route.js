@@ -1,6 +1,10 @@
 export async function GET() {
   const SERVICE_KEY = process.env.SERVICE_KEY;
 
+  if (!SERVICE_KEY) {
+    return new Response("SERVICE_KEY not set", { status: 500 });
+  }
+
   const today = new Date();
   const start = new Date();
   start.setDate(today.getDate() - 30);
@@ -12,7 +16,7 @@ export async function GET() {
     return `${y}${m}${day}${end ? "2359" : "0000"}`;
   };
 
-  const base =
+  const baseUrl =
     `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch` +
     `?ServiceKey=${SERVICE_KEY}` +
     `&numOfRows=100&pageNo=1` +
@@ -20,36 +24,20 @@ export async function GET() {
     `&inqryBgnDt=${fmt(start)}` +
     `&inqryEndDt=${fmt(today, true)}`;
 
-  const 기관목록 = [
-    { code: "1371029", label: "국립중앙도서관" },
-    { code: "9720000", label: "국회도서관" }
-  ];
+  const codes = ["1371029", "9720000"]; // 국립중앙 + 국회
 
-  let result = [];
+  let allXml = "";
 
-  for (const 기관 of 기관목록) {
-    const r = await fetch(`${base}&dminsttCd=${기관.code}`);
-    const xml = await r.text();
-
-    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
-
-    for (const item of items) {
-      const get = (tag) => {
-        const m = item[1].match(new RegExp(`<${tag}>(.*?)<\/${tag}>`));
-        return m ? m[1] : "";
-      };
-
-      result.push({
-        code: 기관.code,
-        instLabel: 기관.label,
-        title: get("bidNtceNm"),
-        date: get("bidNtceDt"),
-        detailUrl: get("bidNtceDtlUrl") // 🔥 이거 그대로 사용
-      });
-    }
+  for (const code of codes) {
+    const res = await fetch(`${baseUrl}&dminsttCd=${code}`);
+    const xml = await res.text();
+    allXml += xml + "\n\n";
   }
 
-  return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" }
+  return new Response(allXml, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Access-Control-Allow-Origin": "*"
+    }
   });
 }
