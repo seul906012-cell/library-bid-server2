@@ -1,54 +1,55 @@
-import { NextResponse } from "next/server";
-
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-
+export async function GET() {
   const SERVICE_KEY = process.env.SERVICE_KEY;
-  const start = searchParams.get("start");
-  const end = searchParams.get("end");
 
-  const baseUrl =
-    "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch";
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - 30);
 
-  let pageNo = 1;
-  let allItems = [];
-  let hasMore = true;
+  const fmt = (d, end = false) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}${m}${day}${end ? "2359" : "0000"}`;
+  };
 
-  while (hasMore) {
-    const url = `${baseUrl}?serviceKey=${SERVICE_KEY}&numOfRows=100&pageNo=${pageNo}&inqryDiv=1&inqryBgnDt=${start}&inqryEndDt=${end}&type=json`;
+  const base =
+    `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch` +
+    `?ServiceKey=${SERVICE_KEY}` +
+    `&numOfRows=100&pageNo=1` +
+    `&inqryDiv=1` +
+    `&inqryBgnDt=${fmt(start)}` +
+    `&inqryEndDt=${fmt(today, true)}`;
 
-    const res = await fetch(url);
-    const data = await res.json();
+  const 기관목록 = [
+    { code: "1371029", label: "국립중앙도서관" },
+    { code: "9720000", label: "국회도서관" }
+  ];
 
-    const items = data?.response?.body?.items || [];
-    const totalCount = data?.response?.body?.totalCount || 0;
+  let result = [];
 
-    if (items.length === 0) {
-      hasMore = false;
-    } else {
-      allItems = [...allItems, ...items];
+  for (const 기관 of 기관목록) {
+    const r = await fetch(`${base}&dminsttCd=${기관.code}`);
+    const xml = await r.text();
 
-      if (allItems.length >= totalCount) {
-        hasMore = false;
-      } else {
-        pageNo++;
-      }
+    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
+
+    for (const item of items) {
+      const get = (tag) => {
+        const m = item[1].match(new RegExp(`<${tag}>(.*?)<\/${tag}>`));
+        return m ? m[1] : "";
+      };
+
+      result.push({
+        code: 기관.code,
+        instLabel: 기관.label,
+        title: get("bidNtceNm"),
+        date: get("bidNtceDt"),
+        detailUrl: get("bidNtceDtlUrl") // 🔥 이거 그대로 사용
+      });
     }
   }
 
-  const filtered = allItems
-    .filter(
-      (item) =>
-        item.dmndInsttCd === "1371029" ||
-        item.dmndInsttCd === "9720000"
-    )
-    .map((item) => ({
-      title: item.bidNtceNm,
-      instLabel: item.dmndInsttNm,
-      code: item.dmndInsttCd,
-      date: item.bidNtceDt?.replace(/[-: ]/g, "").slice(0, 8),
-      detailUrl: item.bidNtceUrl,
-    }));
-
-  return NextResponse.json(filtered);
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json" }
+  });
 }
